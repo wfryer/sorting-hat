@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Sorting Ceremony ⚡</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+
+/* ─── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --void:       #070712;
+  --gold:       #D4AF37;
+  --gold-dim:   #9A7B1A;
+  --parchment:  #E8D5B0;
+  --parch-dim:  #A8956A;
+  --purple:     #7C3AED;
+  --surface:    rgba(255,255,255,0.05);
+  --border:     rgba(212,175,55,0.2);
+
+  --gryfn-r:    #740001;
+  --gryfn-g:    #D3A625;
+  --huffle-y:   #ECB939;
+  --huffle-b:   #1c1208;
+  --raven-b:    #0e1a40;
+  --raven-br:   #946B2D;
+  --slyth-g:    #1A472A;
+  --slyth-s:    #AAAAAA;
+}
+
+/* ─── RESET & BASE ──────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Lato', sans-serif;
+  background: var(--void);
+  color: var(--parchment);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── STARFIELD ─────────────────────────────────────────── */
+#starfield {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+}
+
+/* ─── SCREENS ───────────────────────────────────────────── */
+.screen {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 28px 20px 40px;
+}
+.screen.hidden { display: none !important; }
+
+/* ─── SHARED TITLE ──────────────────────────────────────── */
+.ceremony-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(26px, 4.5vw, 50px);
+  font-weight: 900;
+  color: var(--gold);
+  text-align: center;
+  letter-spacing: .06em;
+  text-shadow: 0 0 30px rgba(212,175,55,.45), 0 0 70px rgba(212,175,55,.15);
+  margin-bottom: 6px;
+}
+.ceremony-sub {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(12px, 1.8vw, 16px);
+  color: var(--parch-dim);
+  text-align: center;
+  font-style: italic;
+  margin-bottom: 30px;
+  letter-spacing: .04em;
+}
+
+/* ─── SETUP SCREEN ──────────────────────────────────────── */
+.setup-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 26px 30px;
+  width: 100%; max-width: 680px;
+  margin-bottom: 18px;
+}
+.setup-card h2 {
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Music bar */
+.music-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid rgba(212,175,55,.12);
+  border-radius: 12px;
+  padding: 12px 18px;
+  width: 100%; max-width: 680px;
+  margin-bottom: 18px;
+}
+.music-bar span { font-size: 13px; color: var(--parch-dim); flex: 1; min-width: 120px; }
+.btn-music {
+  background: rgba(212,175,55,.12);
+  border: 1px solid rgba(212,175,55,.35);
+  border-radius: 8px;
+  padding: 7px 16px;
+  color: var(--gold);
+  font-size: 13px;
+  font-family: 'Lato', sans-serif;
+  cursor: pointer;
+  transition: background .2s;
+  white-space: nowrap;
+}
+.btn-music:hover { background: rgba(212,175,55,.22); }
+#music-iframe { border: none; border-radius: 6px; }
+
+/* House selection grid */
+.house-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (min-width: 540px) {
+  .house-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.house-btn {
+  cursor: pointer;
+  background: rgba(255,255,255,.03);
+  border: 2px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  padding: 14px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--parch-dim);
+  opacity: .42;
+  transition: all .25s ease;
+  user-select: none;
+}
+.house-btn.active { opacity: 1; transform: translateY(-2px); }
+
+.house-btn[data-house="gryffindor"].active {
+  border-color: var(--gryfn-g); background: rgba(116,0,1,.22);
+  color: var(--gryfn-g); box-shadow: 0 0 18px rgba(211,166,37,.2);
+}
+.house-btn[data-house="hufflepuff"].active {
+  border-color: var(--huffle-y); background: rgba(236,185,57,.12);
+  color: var(--huffle-y); box-shadow: 0 0 18px rgba(236,185,57,.2);
+}
+.house-btn[data-house="ravenclaw"].active {
+  border-color: var(--raven-br); background: rgba(14,26,64,.5);
+  color: #aacfff; box-shadow: 0 0 18px rgba(148,107,45,.2);
+}
+.house-btn[data-house="slytherin"].active {
+  border-color: var(--slyth-s); background: rgba(26,71,42,.35);
+  color: var(--slyth-s); box-shadow: 0 0 18px rgba(170,170,170,.15);
+}
+
+.house-note {
+  margin-top: 12px; font-size: 13px;
+  color: var(--parch-dim); text-align: center;
+}
+
+/* Names input */
+.names-area {
+  width: 100%; min-height: 130px;
+  background: rgba(0,0,0,.4);
+  border: 1px solid rgba(212,175,55,.28);
+  border-radius: 10px;
+  padding: 14px;
+  color: var(--parchment);
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  line-height: 1.9;
+  resize: vertical;
+}
+.names-area:focus {
+  outline: none;
+  border-color: rgba(212,175,55,.6);
+  box-shadow: 0 0 14px rgba(212,175,55,.1);
+}
+.names-area::placeholder { color: rgba(232,213,176,.25); }
+.name-count { margin-top: 8px; font-size: 12px; color: var(--parch-dim); text-align: right; }
+
+/* Primary CTA */
+.btn-primary {
+  background: linear-gradient(130deg, #6b3210, #C89420, #6b3210);
+  background-size: 200%;
+  background-position: center;
+  border: none; border-radius: 50px;
+  padding: 16px 48px;
+  font-family: 'Cinzel', serif;
+  font-size: 16px; font-weight: 700;
+  letter-spacing: .1em;
+  color: #0e0600;
+  cursor: pointer;
+  transition: all .3s ease;
+  box-shadow: 0 4px 22px rgba(212,175,55,.28);
+  margin: 14px 0;
+  width: 100%; max-width: 400px;
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 32px rgba(212,175,55,.48);
+}
+.btn-primary:disabled { opacity: .28; cursor: not-allowed; }
+
+/* ─── SORTING SCREEN ─────────────────────────────────────── */
+#screen-sorting { gap: 0; padding-top: 20px; }
+
+/* Hat container */
+.hat-wrap {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%;
+}
+.hat-inner {
+  position: relative;
+  width: 190px; height: 210px;
+  transition: filter .3s;
+}
+.hat-inner.shaking {
+  animation: hatShake 2.6s ease-in-out forwards;
+}
+.hat-inner.thinking {
+  filter: drop-shadow(0 0 18px rgba(124,58,237,.7));
+}
+.hat-inner.thinking .eye-gleam {
+  animation: eyeGlow .38s ease-in-out infinite;
+}
+
+@keyframes hatShake {
+  0%,100% { transform: rotate(0) translateY(0); }
+  8%       { transform: rotate(-14deg) translateY(-7px); }
+  16%      { transform: rotate(13deg) translateY(-11px); }
+  24%      { transform: rotate(-11deg) translateY(-7px); }
+  32%      { transform: rotate(10deg) translateY(-10px); }
+  40%      { transform: rotate(-8deg) translateY(-6px); }
+  48%      { transform: rotate(8deg) translateY(-11px); }
+  56%      { transform: rotate(-5deg) translateY(-5px); }
+  65%      { transform: rotate(4deg) translateY(-7px); }
+  74%      { transform: rotate(-2deg) translateY(-3px); }
+  84%      { transform: rotate(2deg) translateY(-2px); }
+  93%      { transform: rotate(-1deg); }
+}
+@keyframes eyeGlow {
+  0%,100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+/* Speech bubble */
+.hat-bubble {
+  position: absolute;
+  top: -14px; right: -24px;
+  background: var(--parchment);
+  color: #1a0800;
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: 20px;
+  padding: 10px 20px;
+  border-radius: 18px 18px 18px 4px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  white-space: nowrap;
+  z-index: 20;
+  animation: bubblePop .4s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+.hat-bubble.hidden { display: none; }
+@keyframes bubblePop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+/* Student name display */
+.sorting-for {
+  font-family: 'Cinzel', serif;
+  font-size: 12px; letter-spacing: .22em;
+  color: var(--parch-dim);
+  text-transform: uppercase;
+  margin-top: 14px;
+}
+.big-name {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(34px, 7vw, 70px);
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 28px rgba(212,175,55,.38);
+  text-align: center;
+  min-height: 1.2em;
+  line-height: 1.15;
+}
+.progress-txt {
+  font-size: 12px; color: var(--parch-dim);
+  letter-spacing: .12em; margin-top: 4px;
+}
+
+/* Sort button */
+.btn-sort {
+  background: transparent;
+  border: 2px solid var(--gold);
+  border-radius: 50px;
+  padding: 14px 52px;
+  font-family: 'Cinzel', serif;
+  font-size: 17px; font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--gold);
+  cursor: pointer;
+  margin-top: 16px;
+  position: relative; overflow: hidden;
+  transition: all .3s ease;
+  box-shadow: 0 0 20px rgba(212,175,55,.15);
+}
+.btn-sort::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle, rgba(212,175,55,.12) 0%, transparent 70%);
+  opacity: 0; transition: opacity .3s;
+}
+.btn-sort:hover:not(:disabled)::before { opacity: 1; }
+.btn-sort:hover:not(:disabled) {
+  box-shadow: 0 0 36px rgba(212,175,55,.38);
+  transform: scale(1.04);
+}
+.btn-sort:disabled { opacity: .28; cursor: default; }
+
+/* House reveal */
+.reveal-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin-top: 14px;
+}
+.reveal-wrap.hidden { display: none; }
+.reveal-crest {
+  animation: crestReveal .65s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes crestReveal {
+  from { transform: scale(.15) rotate(-18deg); opacity: 0; filter: blur(10px); }
+  60%  { transform: scale(1.12) rotate(2deg);  opacity: 1; filter: blur(0); }
+  80%  { transform: scale(.96) rotate(-1deg); }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+.reveal-name {
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: clamp(28px, 5vw, 54px);
+  letter-spacing: .14em;
+  text-align: center;
+  animation: nameReveal .5s .25s ease-out both;
+}
+@keyframes nameReveal {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Next button */
+.btn-next {
+  background: transparent;
+  border: 1px solid rgba(232,213,176,.3);
+  border-radius: 10px;
+  padding: 10px 32px;
+  color: var(--parch-dim);
+  font-family: 'Lato', sans-serif;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all .2s;
+  margin-top: 10px;
+}
+.btn-next:hover { border-color: var(--parchment); color: var(--parchment); }
+.btn-next.hidden { display: none; }
+
+/* Scoreboard */
+#scoreboard {
+  width: 100%; max-width: 1020px;
+  display: grid; gap: 14px;
+  padding: 18px 0 8px;
+  margin-top: 14px;
+  border-top: 1px solid rgba(212,175,55,.12);
+}
+.house-col {
+  background: var(--surface);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  transition: border-color .4s;
+}
+.col-head {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  width: 100%;
+}
+.col-name {
+  font-family: 'Cinzel', serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .12em; text-align: center;
+}
+.col-members {
+  display: flex; flex-direction: column; align-items: stretch; gap: 7px;
+  width: 100%;
+}
+.member-pill {
+  background: rgba(255,255,255,.08);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 14px; font-weight: 700;
+  text-align: center;
+  animation: pillIn .5s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+@keyframes pillIn {
+  from { transform: translateY(-18px) scale(.8); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Crest image + shield fallback */
+.crest-img {
+  display: block;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+/* ─── COMPLETE SCREEN ─────────────────────────────────────── */
+#screen-complete { padding-top: 36px; }
+.complete-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(24px, 4.5vw, 46px);
+  font-weight: 900;
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 0 0 30px rgba(212,175,55,.5);
+  margin-bottom: 6px;
+}
+.complete-sub {
+  font-family: 'Cinzel', serif;
+  font-size: 14px; font-style: italic;
+  color: var(--parch-dim);
+  text-align: center; margin-bottom: 28px;
+}
+#final-scoreboard {
+  width: 100%; max-width: 1020px;
+  display: grid; gap: 14px;
+}
+.action-row {
+  display: flex; gap: 14px; flex-wrap: wrap;
+  justify-content: center; margin-top: 28px;
+}
+
+/* Sparkle particles */
+.sparkle {
+  position: fixed; border-radius: 50%;
+  pointer-events: none;
+  animation: sparkleRise linear forwards;
+  z-index: 100;
+}
+@keyframes sparkleRise {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-110vh) rotate(540deg); opacity: 0; }
+}
+
+/* ─── PRINT STYLES ──────────────────────────────────────── */
+@media print {
+  #starfield, .btn-primary, .btn-music, .action-row,
+  #screen-setup, #screen-sorting { display: none !important; }
+  body { background: white; color: black; }
+  .house-col { border: 2px solid #ccc; break-inside: avoid; }
+  .col-name, .complete-title { color: black; text-shadow: none; }
+}
+
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 1: SETUP
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-setup" class="screen">
+
+  <h1 class="ceremony-title">⚡ The Sorting Ceremony ⚡</h1>
+  <p class="ceremony-sub">Step forward, young witch or wizard, and await your destiny…</p>
+
+  <!-- Music player -->
+  <div class="music-bar">
+    <span>🎵 Hogwarts Classroom Ambience</span>
+    <button class="btn-music" id="music-btn">▶ Play Music</button>
+    <iframe id="music-iframe"
+      src=""
+      data-src="https://www.youtube.com/embed/uYZKQN3a4Sg?si=q63y-_GSGMxwqgKH&autoplay=1"
+      title="YouTube video player"
+      width="0" height="0"
+      frameborder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+      referrerpolicy="strict-origin-when-cross-origin"
+      allowfullscreen></iframe>
+  </div>
+
+  <!-- Step 1: House selection -->
+  <div class="setup-card">
+    <h2>Step 1 · Choose Your Houses</h2>
+    <div class="house-grid" id="house-grid"></div>
+    <p class="house-note" id="house-note">4 houses selected</p>
+  </div>
+
+  <!-- Step 2: Student names -->
+  <div class="setup-card">
+    <h2>Step 2 · Enter Student Names (one per line)</h2>
+    <textarea class="names-area" id="names-input"
+      placeholder="Harry&#10;Hermione&#10;Ron&#10;Neville&#10;Luna&#10;Draco&#10;Ginny&#10;George"></textarea>
+    <p class="name-count" id="name-count">0 students entered</p>
+  </div>
+
+  <button class="btn-primary" id="begin-btn" disabled>🎩 Begin the Sorting Ceremony</button>
+
+</div><!-- /screen-setup -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 2: SORTING
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-sorting" class="screen hidden">
+
+  <h1 class="ceremony-title" style="margin-bottom:2px;">⚡ The Sorting Ceremony ⚡</h1>
+
+  <div class="hat-wrap">
+    <!-- Sorting Hat -->
+    <div class="hat-inner" id="hat-inner">
+
+      <svg id="hat-svg" viewBox="0 0 200 215" width="190" height="205" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cast shadow -->
+        <ellipse cx="100" cy="204" rx="66" ry="10" fill="#000" opacity=".32"/>
+        <!-- Brim outer -->
+        <ellipse cx="100" cy="180" rx="76" ry="17" fill="#2a1306"/>
+        <!-- Brim inner top -->
+        <ellipse cx="100" cy="177" rx="68" ry="12" fill="#3d1e0d"/>
+        <!-- Hat body left-->
+        <path d="M 28,177 C 32,158 43,136 56,108 C 65,86 72,62 78,36 C 82,17 85,5 87,1
+                 L 100,1 C 98,12 94,34 94,60 C 94,86 100,118 114,145 C 126,165 148,176 168,178 Z"
+              fill="#472210"/>
+        <!-- Hat body right (slightly lighter) -->
+        <path d="M 87,1 C 90,12 96,40 103,65 C 112,95 130,130 148,157 C 158,168 165,175 168,178
+                 C 155,175 138,168 124,155 C 107,140 96,112 93,86 C 90,62 91,36 88,8 Z"
+              fill="#3a1a08" opacity=".5"/>
+        <!-- Crease pocket (the "face" bump) -->
+        <path d="M 44,152 C 57,163 78,167 100,166 C 122,167 143,163 156,152
+                 C 146,140 124,144 100,144 C 76,144 54,140 44,152 Z"
+              fill="#2a1006"/>
+        <!-- Texture wrinkle lines -->
+        <path d="M 68,52 C 71,74 74,96 76,116" stroke="#2a1006" stroke-width="1.6" fill="none" opacity=".65"/>
+        <path d="M 126,62 C 124,82 120,101 117,118" stroke="#2a1006" stroke-width="1.4" fill="none" opacity=".55"/>
+        <!-- Left eye socket -->
+        <ellipse cx="80" cy="122" rx="10" ry="7" fill="#180800"/>
+        <!-- Right eye socket -->
+        <ellipse cx="120" cy="122" rx="10" ry="7" fill="#180800"/>
+        <!-- Eye gleams (light up gold while thinking) -->
+        <ellipse class="eye-gleam" cx="77" cy="120" rx="4.5" ry="3" fill="#D3A625" opacity="0"/>
+        <ellipse class="eye-gleam" cx="117" cy="120" rx="4.5" ry="3" fill="#D3A625" opacity="0"/>
+        <!-- Nose bump -->
+        <path d="M 97,135 L 100,143 L 103,135" stroke="#180800" stroke-width="2.5" fill="#2a1006"/>
+        <!-- Mouth crease -->
+        <path d="M 80,155 C 88,164 112,164 120,155"
+              stroke="#180800" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- Brim edge ring -->
+        <ellipse cx="100" cy="176" rx="63" ry="9" fill="none" stroke="#6b4428" stroke-width="1.5"/>
+        <!-- Hat band / buckle -->
+        <rect x="76" y="168" width="48" height="12" rx="3" fill="#1a0a02"/>
+        <rect x="83" y="170" width="34" height="8" rx="2" fill="#2d1206"/>
+      </svg>
+
+      <!-- Speech bubble (appears after deliberation) -->
+      <div class="hat-bubble hidden" id="hat-bubble"></div>
+    </div><!-- /hat-inner -->
+
+    <!-- Student identity -->
+    <p class="sorting-for">Now sorting:</p>
+    <p class="big-name" id="big-name"></p>
+    <p class="progress-txt" id="progress-txt"></p>
+
+    <!-- Sort trigger -->
+    <button class="btn-sort" id="sort-btn">🎩 Place the Hat</button>
+
+    <!-- House reveal (hidden until sorted) -->
+    <div class="reveal-wrap hidden" id="reveal-wrap">
+      <div class="reveal-crest" id="reveal-crest"></div>
+      <div class="reveal-name" id="reveal-name"></div>
+    </div>
+
+    <!-- Advance to next student -->
+    <button class="btn-next hidden" id="next-btn">Next Student →</button>
+
+  </div><!-- /hat-wrap -->
+
+  <!-- Running scoreboard -->
+  <div id="scoreboard"></div>
+
+</div><!-- /screen-sorting -->
+
+
+<!-- ══════════════════════════════════════════════════════════
+     SCREEN 3: COMPLETE
+═══════════════════════════════════════════════════════════ -->
+<div id="screen-complete" class="screen hidden">
+  <h1 class="complete-title">🎉 The Houses Have Spoken! 🎉</h1>
+  <p class="complete-sub">The Sorting is complete. Let the year begin!</p>
+  <div id="final-scoreboard"></div>
+  <div class="action-row">
+    <button class="btn-primary" id="restart-btn" style="max-width:280px;margin:0;">
+      🔄 Sort Another Group
+    </button>
+    <button class="btn-music" id="print-btn" style="padding:13px 28px;font-size:14px;border-radius:10px;">
+      🖨 Print Results
+    </button>
+  </div>
+</div>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   HOUSE DEFINITIONS
+═══════════════════════════════════════════════════════════ */
+/*
+  CREST IMAGE NOTES:
+  Primary images attempt to load from Wikimedia Commons.
+  If a URL is wrong or unavailable, the app automatically falls back
+  to a built-in SVG heraldic shield — so everything works regardless.
+
+  To swap in verified image URLs, update `crestUrl` for each house below.
+  Tested alternatives:
+    • harrypotter.fandom.com static image URLs
+    • Any direct .png or .svg URL to an HP house crest
+
+  The YouTube music video is Hogwarts classroom ambience:
+  https://www.youtube.com/watch?v=uYZKQN3a4Sg
+  To change the music, update data-src on #music-iframe.
+*/
+const HOUSES = {
+  gryffindor: {
+    key: 'gryffindor', name: 'Gryffindor', animal: '🦁',
+    primary: '#740001', secondary: '#D3A625',
+    textColor: '#D3A625', glow: 'rgba(211,166,37,.35)',
+    crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/GryffindorCrest.png/150px-GryffindorCrest.png',
+  },
+  hufflepuff: {
+    key: 'hufflepuff', name: 'Hufflepuff', animal: '🦡',
+    primary: '#1c1208', secondary: '#ECB939',
+    textColor: '#ECB939', glow: 'rgba(236,185,57,.35)',
+    crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/HufflepuffCrest.png/150px-HufflepuffCrest.png',
+  },
+  ravenclaw: {
+    key: 'ravenclaw', name: 'Ravenclaw', animal: '🦅',
+    primary: '#0e1a40', secondary: '#946B2D',
+    textColor: '#aacfff', glow: 'rgba(148,107,45,.35)',
+    crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/RavenclawCrest.png/150px-RavenclawCrest.png',
+  },
+  slytherin: {
+    key: 'slytherin', name: 'Slytherin', animal: '🐍',
+    primary: '#1A472A', secondary: '#AAAAAA',
+    textColor: '#AAAAAA', glow: 'rgba(170,170,170,.25)',
+    crestUrl: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/SlytherinCrest.png/150px-SlytherinCrest.png',
+  },
+};
+const HOUSE_ORDER = ['gryffindor','hufflepuff','ravenclaw','slytherin'];
+
+/* ═══════════════════════════════════════════════════════════
+   APP STATE
+═══════════════════════════════════════════════════════════ */
+const S = {
+  selected: [...HOUSE_ORDER],
+  students: [],
+  plan: [],       // [{student, house}]
+  idx: 0,
+  tally: {},      // { houseKey: [names] }
+  musicOn: false,
+};
+
+/* ═══════════════════════════════════════════════════════════
+   STARFIELD CANVAS
+═══════════════════════════════════════════════════════════ */
+(function() {
+  const cvs = document.getElementById('starfield');
+  const ctx = cvs.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    cvs.width = innerWidth; cvs.height = innerHeight;
+  }
+  function seed() {
+    stars = Array.from({length:220}, () => ({
+      x: Math.random() * cvs.width,
+      y: Math.random() * cvs.height,
+      r: Math.random() * 1.4 + .3,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * .018 + .006,
+    }));
+  }
+  function draw(t) {
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    for (const s of stars) {
+      const a = .25 + .75 * (.5 + .5 * Math.sin(s.phase + t * s.speed));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(255,255,230,${a})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  resize(); seed(); draw(0);
+  window.addEventListener('resize', () => { resize(); seed(); });
+})();
+
+/* ═══════════════════════════════════════════════════════════
+   SVG SHIELD FALLBACK
+═══════════════════════════════════════════════════════════ */
+function shieldSVG(key, size) {
+  const h = HOUSES[key];
+  return `<svg viewBox="0 0 100 122" width="${size}" height="${size*1.22}"
+    xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="sh${key}">
+        <feDropShadow dx="0" dy="2" stdDeviation="3"
+          flood-color="${h.secondary}" flood-opacity=".4"/>
+      </filter>
+    </defs>
+    <path d="M4,4 H96 V72 Q96,93 75,107 Q50,120 50,120 Q50,120 25,107 Q4,93 4,72 Z"
+      fill="${h.primary}" stroke="${h.secondary}" stroke-width="3.5"
+      filter="url(#sh${key})"/>
+    <line x1="50" y1="4" x2="50" y2="120" stroke="${h.secondary}" stroke-width=".8" opacity=".25"/>
+    <line x1="4" y1="48" x2="96" y2="48" stroke="${h.secondary}" stroke-width=".8" opacity=".25"/>
+    <text x="50" y="72" font-size="40" text-anchor="middle"
+      dominant-baseline="middle">${h.animal}</text>
+    <path d="M10,8 H90 V70 Q90,89 71,103 Q50,116 50,116 Q50,116 29,103 Q10,89 10,70 Z"
+      fill="none" stroke="${h.secondary}" stroke-width=".9" opacity=".35"/>
+  </svg>`;
+}
+
+/* Build a crest element: tries real image, falls back to SVG shield */
+function crestEl(key, size) {
+  const h = HOUSES[key];
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `width:${size}px;height:${Math.round(size*1.22)}px;
+    display:flex;align-items:center;justify-content:center;`;
+  const img = document.createElement('img');
+  img.src = h.crestUrl;
+  img.className = 'crest-img';
+  img.width = size;
+  img.height = Math.round(size * 1.22);
+  img.alt = h.name + ' crest';
+  img.onerror = () => { wrap.innerHTML = shieldSVG(key, size); };
+  wrap.appendChild(img);
+  return wrap;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HOUSE SELECTION BUTTONS
+═══════════════════════════════════════════════════════════ */
+function renderHouseGrid() {
+  const grid = document.getElementById('house-grid');
+  grid.innerHTML = '';
+  HOUSE_ORDER.forEach(k => {
+    const h = HOUSES[k];
+    const btn = document.createElement('button');
+    btn.className = 'house-btn active';
+    btn.dataset.house = k;
+    btn.innerHTML = shieldSVG(k, 52);
+    const label = document.createElement('span');
+    label.textContent = h.name;
+    btn.appendChild(label);
+    btn.onclick = () => toggleHouse(k);
+    grid.appendChild(btn);
+  });
+  refreshHouseNote();
+}
+
+function toggleHouse(k) {
+  const i = S.selected.indexOf(k);
+  if (i === -1) {
+    S.selected.push(k);
+  } else {
+    if (S.selected.length <= 1) return;
+    S.selected.splice(i, 1);
+  }
+  document.querySelectorAll('.house-btn').forEach(b => {
+    b.classList.toggle('active', S.selected.includes(b.dataset.house));
+  });
+  refreshHouseNote();
+  checkBeginReady();
+}
+function refreshHouseNote() {
+  const n = S.selected.length;
+  document.getElementById('house-note').textContent =
+    n + ' house' + (n!==1?'s':'') + ' selected';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAME INPUT
+═══════════════════════════════════════════════════════════ */
+function parseNames(v) {
+  return v.split('\n').map(x => x.trim()).filter(Boolean);
+}
+document.getElementById('names-input').addEventListener('input', function() {
+  const n = parseNames(this.value).length;
+  document.getElementById('name-count').textContent =
+    n + ' student' + (n!==1?'s':'') + ' entered';
+  checkBeginReady();
+});
+function checkBeginReady() {
+  const ok = parseNames(document.getElementById('names-input').value).length > 0
+           && S.selected.length >= 1;
+  document.getElementById('begin-btn').disabled = !ok;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MUSIC TOGGLE
+═══════════════════════════════════════════════════════════ */
+document.getElementById('music-btn').addEventListener('click', function() {
+  const iframe = document.getElementById('music-iframe');
+  if (!S.musicOn) {
+    iframe.src = iframe.dataset.src;
+    iframe.width = 320; iframe.height = 180;
+    this.textContent = '⏹ Stop Music';
+    S.musicOn = true;
+  } else {
+    iframe.src = ''; iframe.width = 0; iframe.height = 0;
+    this.textContent = '▶ Play Music';
+    S.musicOn = false;
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   BALANCED RANDOM ASSIGNMENT
+═══════════════════════════════════════════════════════════ */
+function makeAssignments(students, selected) {
+  // Build pool: distribute houses as evenly as possible
+  const pool = students.map((_, i) => selected[i % selected.length]);
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return students.map((s, i) => ({ student: s, house: pool[i] }));
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BEGIN CEREMONY
+═══════════════════════════════════════════════════════════ */
+document.getElementById('begin-btn').addEventListener('click', () => {
+  S.students = parseNames(document.getElementById('names-input').value);
+  S.plan = makeAssignments(S.students, S.selected);
+  S.idx = 0;
+  S.tally = Object.fromEntries(S.selected.map(k => [k, []]));
+
+  showScreen('screen-sorting');
+  buildScoreboard('scoreboard');
+  loadStudent(0);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   SCREEN SWITCHER
+═══════════════════════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUILD SCOREBOARD COLUMNS
+═══════════════════════════════════════════════════════════ */
+function buildScoreboard(containerId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  const n = S.selected.length;
+  el.style.gridTemplateColumns = `repeat(${Math.min(n, 4)}, 1fr)`;
+
+  // Sort so canonical order is preserved
+  HOUSE_ORDER.filter(k => S.selected.includes(k)).forEach(k => {
+    const h = HOUSES[k];
+    const col = document.createElement('div');
+    col.className = 'house-col';
+    col.id = containerId + '-col-' + k;
+    col.style.borderColor = h.secondary + '28';
+
+    const head = document.createElement('div');
+    head.className = 'col-head';
+    head.appendChild(crestEl(k, 56));
+
+    const nm = document.createElement('div');
+    nm.className = 'col-name';
+    nm.style.color = h.textColor;
+    nm.textContent = h.name;
+    head.appendChild(nm);
+
+    const members = document.createElement('div');
+    members.className = 'col-members';
+    members.id = containerId + '-members-' + k;
+
+    col.appendChild(head);
+    col.appendChild(members);
+    el.appendChild(col);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LOAD STUDENT
+═══════════════════════════════════════════════════════════ */
+function loadStudent(i) {
+  const { student } = S.plan[i];
+  const total = S.plan.length;
+  document.getElementById('big-name').textContent = student;
+  document.getElementById('progress-txt').textContent = (i+1) + ' of ' + total;
+
+  // Reset UI
+  document.getElementById('sort-btn').disabled = false;
+  document.getElementById('sort-btn').textContent = '🎩 Place the Hat';
+  document.getElementById('reveal-wrap').classList.add('hidden');
+  document.getElementById('next-btn').classList.add('hidden');
+  document.getElementById('hat-bubble').classList.add('hidden');
+
+  // Reset hat state
+  const hat = document.getElementById('hat-inner');
+  hat.classList.remove('shaking','thinking');
+  document.querySelectorAll('.eye-gleam').forEach(e => {
+    e.style.animation = 'none'; e.style.opacity = '0';
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SORT BUTTON
+═══════════════════════════════════════════════════════════ */
+document.getElementById('sort-btn').addEventListener('click', function() {
+  this.disabled = true;
+  this.textContent = '🎩 The Hat is deliberating…';
+
+  const hat = document.getElementById('hat-inner');
+  hat.classList.add('shaking','thinking');
+  document.querySelectorAll('.eye-gleam').forEach(e => {
+    e.style.animation = '';
+    void e.offsetWidth; // reflow
+    e.style.animation = 'eyeGlow .38s ease-in-out infinite';
+  });
+
+  // After shake: reveal
+  setTimeout(() => {
+    hat.classList.remove('shaking','thinking');
+    document.querySelectorAll('.eye-gleam').forEach(e => {
+      e.style.animation = 'none'; e.style.opacity = '0';
+    });
+
+    const { house } = S.plan[S.idx];
+    const h = HOUSES[house];
+
+    // Speech bubble
+    const bubble = document.getElementById('hat-bubble');
+    bubble.textContent = h.name.toUpperCase() + '!';
+    bubble.style.color = h.primary;
+    bubble.classList.remove('hidden');
+    // Force re-animation
+    void bubble.offsetWidth;
+    bubble.style.animation = 'none';
+    void bubble.offsetWidth;
+    bubble.style.animation = '';
+
+    // Background flash
+    document.body.style.transition = 'background .35s';
+    document.body.style.background =
+      `radial-gradient(ellipse at center, ${h.primary}40 0%, #070712 55%)`;
+    setTimeout(() => {
+      document.body.style.background = '#070712';
+      setTimeout(() => { document.body.style.transition = ''; }, 400);
+    }, 900);
+
+    // House reveal (slight delay for drama)
+    setTimeout(() => showReveal(house), 550);
+
+  }, 2700);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   HOUSE REVEAL
+═══════════════════════════════════════════════════════════ */
+function showReveal(houseKey) {
+  const h = HOUSES[houseKey];
+  const crestWrap = document.getElementById('reveal-crest');
+  crestWrap.innerHTML = '';
+  crestWrap.style.animation = 'none';
+  void crestWrap.offsetWidth;
+  crestWrap.style.animation = 'crestReveal .65s cubic-bezier(.34,1.56,.64,1) forwards';
+
+  // Try to load crest image; fallback to shield
+  const img = document.createElement('img');
+  img.src = h.crestUrl;
+  img.className = 'crest-img';
+  img.width = 140; img.height = Math.round(140 * 1.22);
+  img.alt = h.name + ' crest';
+  img.onerror = () => { crestWrap.innerHTML = shieldSVG(houseKey, 140); };
+  crestWrap.appendChild(img);
+
+  const revName = document.getElementById('reveal-name');
+  revName.textContent = h.name.toUpperCase();
+  revName.style.color = h.textColor;
+  revName.style.textShadow = `0 0 40px ${h.glow}, 0 0 80px ${h.glow}`;
+  revName.style.animation = 'none';
+  void revName.offsetWidth;
+  revName.style.animation = 'nameReveal .5s .25s ease-out both';
+
+  document.getElementById('reveal-wrap').classList.remove('hidden');
+
+  // Add to live scoreboard after brief pause
+  setTimeout(() => {
+    addToScoreboard(S.plan[S.idx].student, houseKey);
+    document.getElementById('next-btn').classList.remove('hidden');
+  }, 750);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ADD STUDENT TO SCOREBOARD
+═══════════════════════════════════════════════════════════ */
+function addToScoreboard(name, houseKey) {
+  const h = HOUSES[houseKey];
+  S.tally[houseKey].push(name);
+  const membersEl = document.getElementById('scoreboard-members-' + houseKey);
+  if (!membersEl) return;
+  const pill = document.createElement('div');
+  pill.className = 'member-pill';
+  pill.textContent = name;
+  pill.style.cssText = `
+    border-left: 3px solid ${h.secondary};
+    color: ${h.textColor};
+    background: ${h.primary}22;
+  `;
+  membersEl.appendChild(pill);
+  pill.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEXT STUDENT
+═══════════════════════════════════════════════════════════ */
+document.getElementById('next-btn').addEventListener('click', () => {
+  S.idx++;
+  if (S.idx >= S.plan.length) {
+    showComplete();
+  } else {
+    loadStudent(S.idx);
+  }
+});
+
+/* ═══════════════════════════════════════════════════════════
+   COMPLETION SCREEN
+═══════════════════════════════════════════════════════════ */
+function showComplete() {
+  showScreen('screen-complete');
+  buildFinalScoreboard();
+  launchSparkles();
+}
+
+function buildFinalScoreboard() {
+  const el = document.getElementById('final-scoreboard');
+  el.innerHTML = '';
+  el.style.gridTemplateColumns =
+    `repeat(${Math.min(S.selected.length, 4)}, 1fr)`;
+
+  HOUSE_ORDER.filter(k => S.selected.includes(k)).forEach(k => {
+    const h = HOUSES[k];
+    const col = document.createElement('div');
+    col.className = 'house-col';
+    col.style.borderColor = h.secondary + '28';
+
+    const head = document.createElement('div');
+    head.className = 'col-head';
+    head.appendChild(crestEl(k, 70));
+    const nm = document.createElement('div');
+    nm.className = 'col-name';
+    nm.style.color = h.textColor;
+    nm.textContent = h.name + ' (' + (S.tally[k] || []).length + ')';
+    head.appendChild(nm);
+
+    const members = document.createElement('div');
+    members.className = 'col-members';
+    (S.tally[k] || []).forEach((name, i) => {
+      const pill = document.createElement('div');
+      pill.className = 'member-pill';
+      pill.textContent = name;
+      pill.style.cssText = `
+        border-left: 3px solid ${h.secondary};
+        color: ${h.textColor};
+        background: ${h.primary}22;
+        animation-delay: ${i * 60}ms;
+      `;
+      members.appendChild(pill);
+    });
+
+    col.appendChild(head); col.appendChild(members);
+    el.appendChild(col);
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SPARKLE CELEBRATION
+═══════════════════════════════════════════════════════════ */
+function launchSparkles() {
+  const palette = [
+    '#D3A625','#740001','#ECB939','#946B2D',
+    '#1A472A','#aacfff','#ffffff','#7C3AED'
+  ];
+  for (let i = 0; i < 55; i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      const sz = Math.random() * 10 + 4;
+      s.style.cssText = `
+        left: ${Math.random()*100}vw;
+        bottom: 0;
+        width: ${sz}px; height: ${sz}px;
+        background: ${palette[Math.floor(Math.random()*palette.length)]};
+        animation-duration: ${Math.random()*2+1.5}s;
+      `;
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 4000);
+    }, i * 70);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESTART
+═══════════════════════════════════════════════════════════ */
+document.getElementById('restart-btn').addEventListener('click', () => {
+  S.selected = [...HOUSE_ORDER];
+  S.students = []; S.plan = []; S.idx = 0; S.tally = {};
+  document.getElementById('names-input').value = '';
+  document.getElementById('name-count').textContent = '0 students entered';
+  document.getElementById('begin-btn').disabled = true;
+  document.querySelectorAll('.house-btn').forEach(b => b.classList.add('active'));
+  refreshHouseNote();
+  showScreen('screen-setup');
+});
+
+/* ═══════════════════════════════════════════════════════════
+   PRINT
+═══════════════════════════════════════════════════════════ */
+document.getElementById('print-btn').addEventListener('click', () => window.print());
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+renderHouseGrid();
+
+</script>
+</body>
+</html>
