@@ -426,6 +426,38 @@ body {
   border-radius: 4px;
 }
 
+/* ─── WHISPER PREFERENCE ─────────────────────────────────── */
+.whisper-section {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 8px; margin: 12px 0 2px;
+}
+.whisper-label {
+  font-family: 'Cinzel', serif;
+  font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--parch-dim);
+}
+.whisper-label em { opacity: .55; font-style: normal; }
+.whisper-pills {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+.whisper-pill {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: 50px;
+  padding: 7px 16px;
+  font-family: 'Cinzel', serif;
+  font-size: 12px; letter-spacing: .06em;
+  color: var(--parch-dim);
+  cursor: pointer;
+  opacity: .55;
+  transition: all .22s ease;
+}
+.whisper-pill:hover { opacity: .8; }
+.whisper-pill.chosen {
+  opacity: 1;
+  transform: scale(1.07);
+}
+
 /* ─── COMPLETE SCREEN ─────────────────────────────────────── */
 #screen-complete { padding-top: 36px; }
 .complete-title {
@@ -583,6 +615,12 @@ body {
     <p class="big-name" id="big-name"></p>
     <p class="progress-txt" id="progress-txt"></p>
 
+    <!-- Whisper preference (optional) -->
+    <div class="whisper-section" id="whisper-section">
+      <p class="whisper-label">Whisper to the hat <em>(optional)</em></p>
+      <div class="whisper-pills" id="whisper-pills"></div>
+    </div>
+
     <!-- Sort trigger -->
     <button class="btn-sort" id="sort-btn">🎩 Place the Hat</button>
 
@@ -678,6 +716,7 @@ const S = {
   idx: 0,
   tally: {},      // { houseKey: [names] }
   musicOn: false,
+  preference: null, // house key the current student whispered, or null
 };
 
 /* ═══════════════════════════════════════════════════════════
@@ -921,12 +960,57 @@ function loadStudent(i) {
   document.getElementById('reveal-wrap').classList.add('hidden');
   document.getElementById('next-btn').classList.add('hidden');
   document.getElementById('hat-bubble').classList.add('hidden');
+  document.getElementById('whisper-section').style.display = '';
 
   // Reset hat state
   const hat = document.getElementById('hat-inner');
   hat.classList.remove('shaking','thinking');
   document.querySelectorAll('.eye-gleam').forEach(e => {
     e.style.animation = 'none'; e.style.opacity = '0';
+  });
+
+  // Reset preference and rebuild whisper buttons for this student
+  S.preference = null;
+  buildWhisperButtons();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   WHISPER PREFERENCE
+═══════════════════════════════════════════════════════════ */
+function buildWhisperButtons() {
+  const container = document.getElementById('whisper-pills');
+  container.innerHTML = '';
+  HOUSE_ORDER.filter(k => S.selected.includes(k)).forEach(k => {
+    const h = HOUSES[k];
+    const pill = document.createElement('button');
+    pill.className = 'whisper-pill';
+    pill.dataset.house = k;
+    pill.textContent = h.animal + ' ' + h.name;
+    pill.onclick = () => selectPreference(k);
+    container.appendChild(pill);
+  });
+}
+
+function selectPreference(k) {
+  // Tap again to deselect
+  S.preference = (S.preference === k) ? null : k;
+
+  document.querySelectorAll('.whisper-pill').forEach(p => {
+    const hk = p.dataset.house;
+    const h = HOUSES[hk];
+    if (hk === S.preference) {
+      p.classList.add('chosen');
+      p.style.borderColor = h.secondary;
+      p.style.color = h.textColor;
+      p.style.background = h.primary + '35';
+      p.style.boxShadow = `0 0 14px ${h.glow}`;
+    } else {
+      p.classList.remove('chosen');
+      p.style.borderColor = '';
+      p.style.color = '';
+      p.style.background = '';
+      p.style.boxShadow = '';
+    }
   });
 }
 
@@ -936,6 +1020,9 @@ function loadStudent(i) {
 document.getElementById('sort-btn').addEventListener('click', function() {
   this.disabled = true;
   this.textContent = '🎩 The Hat is deliberating…';
+
+  // Hide whisper pills once deliberation starts
+  document.getElementById('whisper-section').style.display = 'none';
 
   const hat = document.getElementById('hat-inner');
   hat.classList.add('shaking','thinking');
@@ -952,12 +1039,15 @@ document.getElementById('sort-btn').addEventListener('click', function() {
       e.style.animation = 'none'; e.style.opacity = '0';
     });
 
-    const { house } = S.plan[S.idx];
+    // Honor student's whispered preference, or use balanced assignment
+    const house = S.preference || S.plan[S.idx].house;
     const h = HOUSES[house];
 
-    // Speech bubble
+    // Speech bubble: acknowledge wish if one was made
     const bubble = document.getElementById('hat-bubble');
-    bubble.textContent = h.name.toUpperCase() + '!';
+    bubble.textContent = S.preference
+      ? 'You knew it… ' + h.name.toUpperCase() + '!'
+      : h.name.toUpperCase() + '!';
     bubble.style.color = h.primary;
     bubble.classList.remove('hidden');
     // Force re-animation
